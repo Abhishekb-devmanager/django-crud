@@ -27,7 +27,7 @@ class PlanView(APIView):
         serializer = PlanSerializer(plans, many=is_many)
         return Response(({"plans":serializer.data}))
         
-
+    #how to disallow request - plan/24 with post action
     def post(self, request):
         """Handle update requests plan/<id>.Returns 201 Resource created with created objects as a list."""
         #Create a plan from the above data, 
@@ -38,8 +38,8 @@ class PlanView(APIView):
         serializer = PlanSerializer(data=request.data["plans"], many=is_many)
 
         if serializer.is_valid(raise_exception=True):
-             plan_saved = serializer.save()
-
+            plan_saved = serializer.save()
+        # ternary operator - right side of if expression else is executed
         pn =  plan_saved[0].plan_name if is_many else plan_saved.plan_name
         return Response({
                             "success": "Plan {} created successfully".format(pn),
