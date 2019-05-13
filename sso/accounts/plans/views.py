@@ -51,11 +51,11 @@ class PlanView(APIView):
         """Handle update requests plan/<id>.
         Returns 200 with updated object.
         This does not creates object if it does not exists."""
-
         saved_plan = self.get_object(pk=pk)
 
         #Supports partial request - PATCH in Django might be broken.
-        serializer = PlanSerializer(instance=saved_plan, data=request.data, partial=True)
+        serializer = PlanSerializer(instance=saved_plan, data=request.data["plans"], partial=True)
+        #TODO: this did not raise exception when request.data was mistakenly supplie
         if serializer.is_valid(raise_exception=True):
             plan_saved = serializer.save()
 
