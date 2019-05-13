@@ -57,7 +57,7 @@ class PlanView(APIView):
         saved_plan = self.get_object(pk=pk)
         #features = request.data.get('plans')[0].pop('features')
         #Supports partial request - PATCH in Django might be broken.
-        serializer = PlanSerializer(instance=saved_plan, data=request.data, partial=True)
+        serializer = PlanSerializer(instance=saved_plan, data=request.data["plans"], partial=True)
         if serializer.is_valid(raise_exception=True):
             plan_saved = serializer.save()
 

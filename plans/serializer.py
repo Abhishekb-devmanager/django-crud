@@ -18,7 +18,7 @@ class PlanFeatureSerializer(serializers.ModelSerializer):
     
 class PlanSerializer(serializers.ModelSerializer):
     """Serializer to map the Plan Model instance into JSON format."""
-    #features = PlanFeatureSerializer(many=True)
+    features = PlanFeatureSerializer(many=True)
 
     class Meta:
         model = Plan
@@ -39,7 +39,11 @@ class PlanSerializer(serializers.ModelSerializer):
         #So we are better off by using separate update function for planfeatures.
 
     def update(self, instance, validated_data):
-
+        if hasattr(validated_data, 'features'):
+            features_data = validated_data.pop('features')
+            features = (instance.features).all()
+            features = list(features)
+        
         instance.plan_name = validated_data.get('plan_name', instance.plan_name)
         instance.description = validated_data.get('description', instance.description)
         instance.amount = validated_data.get('amount', instance.amount)
@@ -48,6 +52,14 @@ class PlanSerializer(serializers.ModelSerializer):
         instance.interval = validated_data.get('interval', instance.interval)
         instance.notes = validated_data.get('notes', instance.notes)
         instance.save()
+
+        for feature_data in features_data:
+            #pop(0) will extract one object at a time leaving the remaining dict with -1 object. 
+            #so every iteration gives a fresh object to update.
+            feature = features.pop(0)
+            feature.display_text = feature_data.get('display_text', feature.display_text)
+            feature.save()
+
         return instance
 
 # class PlanSerializer(serializers.Serializer):
