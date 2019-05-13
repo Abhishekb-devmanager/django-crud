@@ -10,11 +10,15 @@ class PlanFeatureSerializer(serializers.ModelSerializer):
         """Meta class to map serializer's fields with the model fields."""
         model = PlanFeature
         fields = ('display_text','created_at')
-
+    
+    def update(self, instance, validated_data):
+        instance.features = validated_data.get('features', instance.features)
+        instance.save()
+        return instance
     
 class PlanSerializer(serializers.ModelSerializer):
     """Serializer to map the Plan Model instance into JSON format."""
-    features = PlanFeatureSerializer(many=True)
+    #features = PlanFeatureSerializer(many=True)
 
     class Meta:
         model = Plan
@@ -31,6 +35,9 @@ class PlanSerializer(serializers.ModelSerializer):
             PlanFeature.objects.create(plan=planObj, **feature_data)
         return planObj
 
+        #It turns out that multiple objects cannot be updated at once. 
+        #So we are better off by using separate update function for planfeatures.
+
     def update(self, instance, validated_data):
 
         instance.plan_name = validated_data.get('plan_name', instance.plan_name)
@@ -40,7 +47,6 @@ class PlanSerializer(serializers.ModelSerializer):
         instance.period = validated_data.get('period', instance.period)
         instance.interval = validated_data.get('interval', instance.interval)
         instance.notes = validated_data.get('notes', instance.notes)
-        #instance.features = validated_data.get('features', instance.features)
         instance.save()
         return instance
 

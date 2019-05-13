@@ -32,3 +32,15 @@ class PlanFeature(models.Model):
     def __str__(self):
         return self.display_text
 
+# class PlanManager(models.Manager):
+
+#     def create(self, plan_name, description, amount, currency, period, interval, notes, features):
+#         plan = Plan(plan_name=plan_name, description=description, amount=amount, currency=currency, period=period, interval=interval, notes=notes)
+#         plan.save()
+#         plan_features = PlanFeature(
+#             plan=plan,
+#             display_text = features.display_text
+#         )
+#         plan_features.save()
+#         return plan
+
