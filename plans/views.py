@@ -27,19 +27,21 @@ class PlanView(APIView):
         serializer = PlanSerializer(plans, many=is_many)
         return Response(({"plans":serializer.data}))
         
-
+    #how to disallow request - plan/24 with post action
     def post(self, request):
         """Handle update requests plan/<id>.Returns 201 Resource created with created objects as a list."""
         #Create a plan from the above data, 
         #mulitple plan object can also be created if a list of plans is supplied
         # is_many set to false if it is a dict.
         is_many = isinstance(request.data["plans"], list)
-        
+
+        #many = true needed to support saving of a list of plan objs
         serializer = PlanSerializer(data=request.data["plans"], many=is_many)
 
         if serializer.is_valid(raise_exception=True):
-             plan_saved = serializer.save()
-
+            plan_saved = serializer.save()
+            
+        # ternary operator - right side of if expression else is executed
         pn =  plan_saved[0].plan_name if is_many else plan_saved.plan_name
         return Response({
                             "success": "Plan {} created successfully".format(pn),
@@ -52,12 +54,19 @@ class PlanView(APIView):
         Returns 200 with updated object.
         This does not creates object if it does not exists."""
         saved_plan = self.get_object(pk=pk)
-
+        #features = request.data.get('plans')[0].pop('features')
         #Supports partial request - PATCH in Django might be broken.
         serializer = PlanSerializer(instance=saved_plan, data=request.data["plans"], partial=True)
+<<<<<<< HEAD:sso/accounts/plans/views.py
         #TODO: this did not raise exception when request.data was mistakenly supplie
+=======
+>>>>>>> feature/relationships/manytoone:plans/views.py
         if serializer.is_valid(raise_exception=True):
             plan_saved = serializer.save()
+
+        # plan_feature_serializer = PlanFeatureSerializer(instance=saved_plan.features, data=features, partial=True, many=True)
+        # if plan_feature_serializer.is_valid(raise_exception=True):
+        #     plan_feature_saved = plan_feature_serializer.save()
 
         return Response({
                 "success": "Plan '{}' updated successfully".format(plan_saved.plan_name),

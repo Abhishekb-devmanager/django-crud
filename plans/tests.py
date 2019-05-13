@@ -187,7 +187,15 @@ class PlanViewTestCase(TestCase):
                     "period": "monthly",
                     "interval": 1,
                     "notes": "Test Notes",
-                    "features":["TF1 Test","TF2 Test","TF3 Test"]
+                    "features":[{
+                    				"display_text":"TF1 Test"
+                    			},
+                    			{
+                    				"display_text":"TF2 Test"
+                    			},
+                    			{
+                    				"display_text":"TF3 Test"
+                    			}]
                 }]
             },
             format="json"
