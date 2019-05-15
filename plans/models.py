@@ -21,12 +21,8 @@ class Plan(models.Model):
         return self.plan_name
 
 class PlanFeature(models.Model):
-<<<<<<< HEAD:sso/accounts/plans/models.py
-    #plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
-=======
     #added blank true to fix plan field required error while submitting. Serializer.isvalid failed w/o.
     plan = models.ForeignKey(Plan, related_name="features", on_delete=models.CASCADE)
->>>>>>> feature/relationships/manytoone:plans/models.py
     display_text = models.CharField(max_length=500, help_text="Feature description displayed on plan page")
     created_at= models.DateTimeField(auto_now=True)
 

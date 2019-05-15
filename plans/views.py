@@ -28,6 +28,8 @@ class PlanView(APIView):
         return Response(({"plans":serializer.data}))
         
     #how to disallow request - plan/24 with post action
+    #TODO: Need to check the incoming request data structure, avoid any key errors
+    #TODO: Need to validate the data through middleware
     def post(self, request):
         """Handle update requests plan/<id>.Returns 201 Resource created with created objects as a list."""
         #Create a plan from the above data, 
@@ -53,14 +55,14 @@ class PlanView(APIView):
         """Handle update requests plan/<id>.
         Returns 200 with updated object.
         This does not creates object if it does not exists."""
+
         saved_plan = self.get_object(pk=pk)
         #features = request.data.get('plans')[0].pop('features')
         #Supports partial request - PATCH in Django might be broken.
         serializer = PlanSerializer(instance=saved_plan, data=request.data["plans"], partial=True)
-<<<<<<< HEAD:sso/accounts/plans/views.py
+
         #TODO: this did not raise exception when request.data was mistakenly supplie
-=======
->>>>>>> feature/relationships/manytoone:plans/views.py
+
         if serializer.is_valid(raise_exception=True):
             plan_saved = serializer.save()
 

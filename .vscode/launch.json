@@ -47,11 +47,7 @@
             "name": "Python: Django",
             "type": "python",
             "request": "launch",
-<<<<<<< HEAD
-            "program": "${workspaceFolder}/sso/accounts/manage.py",
-=======
             "program": "${workspaceFolder}/manage.py",
->>>>>>> feature/relationships/manytoone
             "console": "integratedTerminal",
             "args": [
                 "runserver",

@@ -39,6 +39,7 @@ class PlanSerializer(serializers.ModelSerializer):
         #So we are better off by using separate update function for planfeatures.
 
     def update(self, instance, validated_data):
+        
         if hasattr(validated_data, 'features'):
             features_data = validated_data.pop('features')
             features = (instance.features).all()
@@ -52,13 +53,13 @@ class PlanSerializer(serializers.ModelSerializer):
         instance.interval = validated_data.get('interval', instance.interval)
         instance.notes = validated_data.get('notes', instance.notes)
         instance.save()
-
+        #TODO: What if plan is present without any feature associated pop would fail.
         for feature_data in features_data:
             #pop(0) will extract one object at a time leaving the remaining dict with -1 object. 
             #so every iteration gives a fresh object to update.
-            feature = features.pop(0)
-            feature.display_text = feature_data.get('display_text', feature.display_text)
-            feature.save()
+                feature = features.pop(0)
+                feature.display_text = feature_data.get('display_text', feature.display_text)
+                feature.save()
 
         return instance
 

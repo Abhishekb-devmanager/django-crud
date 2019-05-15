@@ -41,20 +41,33 @@ class PlanViewTestCase(TestCase):
                                 "currency": "INR",
                                 "period": "monthly",
                                 "interval": 1,
-                                "notes": "Test Notes"
+                                "notes": "Test Notes",
+                                "features":[{
+                    				"display_text":"TF1 Test"
+                    			},
+                    			{
+                    				"display_text":"TF2 Test"
+                    			},
+                    			{
+                    				"display_text":"TF3 Test"
+                    			}]
                             }]
                          }
         #testing update to the fresh plan created.
-        self.valid_plan_data_payload = {
-                                "plan_name": "Put Monthly Plan 1999999", 
-                                "description": "This is test description", 
-                                "amount": 99, 
-                                "currency": "INR",
-                                "period": "monthly",
-                                "interval": 1,
-                                "notes": "Test Notes"
-                            }
-                         
+        self.valid_plan_data_payload = { 
+                                            "plans":{
+                                                "plan_name": "Put Monthly Plan 1999999", 
+                                                "description": "This is test description", 
+                                                "amount": 99, 
+                                                "currency": "INR",
+                                                "period": "monthly",
+                                                "interval": 1,
+                                                "notes": "Test Notes",
+                                                 "features":[{
+                                                     "display_text":"TF1 Test"
+                    			                    }]
+                                                }   
+                                        }
         #currency is missing
         self.invalid_plan_data_payload_1 = {
                         "plan_name": "Fortnightly Plan", 
@@ -168,7 +181,7 @@ class PlanViewTestCase(TestCase):
         ) 
         self.assertEqual(new_response.status_code, status.HTTP_200_OK, msg="Update Plan Failed")
         try:
-            updatedObjName = Plan.objects.get(plan_name=self.valid_plan_data_payload["plan_name"])
+            updatedObjName = Plan.objects.get(plan_name=self.valid_plan_data_payload.get("plans")["plan_name"])
         except Plan.DoesNotExist:
             updatedObjName = None
         self.assertIsNotNone(updatedObjName)
@@ -177,7 +190,7 @@ class PlanViewTestCase(TestCase):
         """Test the api has plan creation capability."""
         #Create a plan using API, also it can be created using plan model.
         response = self.client.post(
-            reverse("plan_feature_list"),
+            reverse("create"),
             {
                 "plans":[{
                     "plan_name": "Monthly Plan 234", 
