@@ -22,7 +22,7 @@ class Plan(models.Model):
 
 class PlanFeature(models.Model):
     #added blank true to fix plan field required error while submitting. Serializer.isvalid failed w/o.
-    plan = models.ForeignKey(Plan, related_name="features", on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan,related_name="features", on_delete=models.CASCADE)
     display_text = models.CharField(max_length=500, help_text="Feature description displayed on plan page")
     created_at= models.DateTimeField(auto_now=True)
 

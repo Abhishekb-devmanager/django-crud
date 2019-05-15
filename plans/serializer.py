@@ -35,15 +35,12 @@ class PlanSerializer(serializers.ModelSerializer):
             PlanFeature.objects.create(plan=planObj, **feature_data)
         return planObj
 
-        #It turns out that multiple objects cannot be updated at once. 
-        #So we are better off by using separate update function for planfeatures.
-
     def update(self, instance, validated_data):
-        
+        incoming_features_data = []
         if hasattr(validated_data, 'features'):
-            features_data = validated_data.pop('features')
-            features = (instance.features).all()
-            features = list(features)
+            incoming_features_data = validated_data.pop('features')
+            current_features = (instance.features).all()
+            current_features = list(current_features)
         
         instance.plan_name = validated_data.get('plan_name', instance.plan_name)
         instance.description = validated_data.get('description', instance.description)
@@ -54,10 +51,10 @@ class PlanSerializer(serializers.ModelSerializer):
         instance.notes = validated_data.get('notes', instance.notes)
         instance.save()
         #TODO: What if plan is present without any feature associated pop would fail.
-        for feature_data in features_data:
+        for feature_data in incoming_features_data:
             #pop(0) will extract one object at a time leaving the remaining dict with -1 object. 
             #so every iteration gives a fresh object to update.
-                feature = features.pop(0)
+                feature = current_features.pop(0)
                 feature.display_text = feature_data.get('display_text', feature.display_text)
                 feature.save()
 

@@ -9,7 +9,7 @@ from .models import Plan, PlanFeature
 
 class PlanView(APIView):
     """This class defines the create behavior of our rest api."""
-
+    
     def get_object(self, pk):
         try:
             return Plan.objects.get(pk=pk)
@@ -35,10 +35,11 @@ class PlanView(APIView):
         #Create a plan from the above data, 
         #mulitple plan object can also be created if a list of plans is supplied
         # is_many set to false if it is a dict.
-        is_many = isinstance(request.data["plans"], list)
+        # remove plans key - request does not need to have a key at the root, we assume its plan data.
+        is_many = isinstance(request.data, list)
 
         #many = true needed to support saving of a list of plan objs
-        serializer = PlanSerializer(data=request.data["plans"], many=is_many)
+        serializer = PlanSerializer(data=request.data, many=is_many)
 
         if serializer.is_valid(raise_exception=True):
             plan_saved = serializer.save()
@@ -57,18 +58,13 @@ class PlanView(APIView):
         This does not creates object if it does not exists."""
 
         saved_plan = self.get_object(pk=pk)
-        #features = request.data.get('plans')[0].pop('features')
+
         #Supports partial request - PATCH in Django might be broken.
-        serializer = PlanSerializer(instance=saved_plan, data=request.data["plans"], partial=True)
+        serializer = PlanSerializer(instance=saved_plan, data=request.data, partial=True)
 
-        #TODO: this did not raise exception when request.data was mistakenly supplie
-
+        #TODO: this did not raise exception when request.data was mistakenly supplied
         if serializer.is_valid(raise_exception=True):
             plan_saved = serializer.save()
-
-        # plan_feature_serializer = PlanFeatureSerializer(instance=saved_plan.features, data=features, partial=True, many=True)
-        # if plan_feature_serializer.is_valid(raise_exception=True):
-        #     plan_feature_saved = plan_feature_serializer.save()
 
         return Response({
                 "success": "Plan '{}' updated successfully".format(plan_saved.plan_name),

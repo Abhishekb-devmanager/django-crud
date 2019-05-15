@@ -33,42 +33,30 @@ class PlanViewTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
          #fresh plan object created.
-        self.plan_data = {
-                            "plans":[{
-                                "plan_name": "Monthly Plan 1999999", 
-                                "description": "This is test description", 
-                                "amount": 99, 
-                                "currency": "INR",
-                                "period": "monthly",
-                                "interval": 1,
-                                "notes": "Test Notes",
-                                "features":[{
-                    				"display_text":"TF1 Test"
-                    			},
-                    			{
-                    				"display_text":"TF2 Test"
-                    			},
-                    			{
-                    				"display_text":"TF3 Test"
-                    			}]
-                            }]
-                         }
+        self.plan_data = [{
+                            "plan_name": "Monthly Plan 1999999", 
+                            "description": "This is test description", 
+                            "amount": 99, 
+                            "currency": "INR",
+                            "period": "monthly",
+                            "interval": 1,
+                            "notes": "Test Notes"
+                        }]
+                         
         #testing update to the fresh plan created.
-        self.valid_plan_data_payload = { 
-                                            "plans":{
-                                                "plan_name": "Put Monthly Plan 1999999", 
-                                                "description": "This is test description", 
-                                                "amount": 99, 
-                                                "currency": "INR",
-                                                "period": "monthly",
-                                                "interval": 1,
-                                                "notes": "Test Notes",
-                                                 "features":[{
-                                                     "display_text":"TF1 Test"
-                    			                    }]
-                                                }   
+        self.valid_plan_data_payload = {
+                                        "plan_name": "Put Monthly Plan 1999999", 
+                                        "description": "This is test description", 
+                                        "amount": 99, 
+                                        "currency": "INR",
+                                        "period": "monthly",
+                                        "interval": 1,
+                                        "notes": "Test Notes",
+                                            "features":[{
+                                                "display_text":"TF1 Test"
+                                            }]
                                         }
-        #currency is missing
+        #amount is missing
         self.invalid_plan_data_payload_1 = {
                         "plan_name": "Fortnightly Plan", 
                         "description": "This is test description", 
@@ -99,7 +87,7 @@ class PlanViewTestCase(TestCase):
                         "notes": "Test Notes"
                          }
 
-    def test_api_can_create_a_plan(self):
+    def test_api_cannot_create_a_plan_without_features(self):
         """Test the api has plan creation capability."""
         #Create a plan using API, also it can be created using plan model.
         response = self.client.post(
@@ -110,6 +98,72 @@ class PlanViewTestCase(TestCase):
         #print(json.loads(response.content))
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
         self.assertContains(response, "Monthly Plan 1999999", status_code=201)
+
+    def test_api_can_create_a_plan_with_features(self):
+        """Test the api has plan creation capability."""
+        #Create a plan using API, also it can be created using plan model.
+        response = self.client.post(
+            reverse("create"),
+                [{
+                    "plan_name": "Monthly Plan 234", 
+                    "description": "This is test description", 
+                    "amount": 99, 
+                    "currency": "INR",
+                    "period": "monthly",
+                    "interval": 1,
+                    "notes": "Test Notes",
+                    "features":[{
+                    				"display_text":"TF1 Test"
+                    			},
+                    			{
+                    				"display_text":"TF2 Test"
+                    			},
+                    			{
+                    				"display_text":"TF3 Test"
+                    			}]
+                }],
+                format="json"
+        )    
+        #print(json.loads(response.content))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
+        self.assertContains(response, "Monthly Plan 234", status_code=201)
+
+    def test_api_cannot_create_a_plan_without_amount(self):
+        """Test the api has plan creation capability."""
+        #Create a plan using API, also it can be created using plan model.
+        response = self.client.post(
+            reverse("create"),
+                self.invalid_plan_data_payload_1,
+                format="json"
+        )    
+        #print(json.loads(response.content))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
+        self.assertContains(response, "Fortnightly Plan", status_code=201)
+
+    def test_api_cannot_create_a_plan_without_valid_amount(self):
+        """Test the api has plan creation capability."""
+        #Create a plan using API, also it can be created using plan model.
+        response = self.client.post(
+            reverse("create"),
+                self.invalid_plan_data_payload_2,
+                format="json"
+        )    
+        #print(json.loads(response.content))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
+        self.assertContains(response, "Fortnightly Plan", status_code=201)
+
+    def test_api_cannot_create_a_plan_without_valid_period(self):
+        """Test the api has plan creation capability."""
+        #Create a plan using API, also it can be created using plan model.
+        response = self.client.post(
+            reverse("create"),
+                self.invalid_plan_data_payload_3,
+                format="json"
+        )    
+        #print(json.loads(response.content))
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
+        self.assertContains(response, "Fortnightly Plan", status_code=201)
+
 
     def test_api_can_get_plans(self):
         """Test the api fetch plans."""
@@ -181,38 +235,9 @@ class PlanViewTestCase(TestCase):
         ) 
         self.assertEqual(new_response.status_code, status.HTTP_200_OK, msg="Update Plan Failed")
         try:
-            updatedObjName = Plan.objects.get(plan_name=self.valid_plan_data_payload.get("plans")["plan_name"])
+            updatedObjName = Plan.objects.get(plan_name=self.valid_plan_data_payload.get("plan_name"))
         except Plan.DoesNotExist:
             updatedObjName = None
         self.assertIsNotNone(updatedObjName)
 
-    def test_api_can_create_a_plan_with_features(self):
-        """Test the api has plan creation capability."""
-        #Create a plan using API, also it can be created using plan model.
-        response = self.client.post(
-            reverse("create"),
-            {
-                "plans":[{
-                    "plan_name": "Monthly Plan 234", 
-                    "description": "This is test description", 
-                    "amount": 99, 
-                    "currency": "INR",
-                    "period": "monthly",
-                    "interval": 1,
-                    "notes": "Test Notes",
-                    "features":[{
-                    				"display_text":"TF1 Test"
-                    			},
-                    			{
-                    				"display_text":"TF2 Test"
-                    			},
-                    			{
-                    				"display_text":"TF3 Test"
-                    			}]
-                }]
-            },
-            format="json"
-        )    
-        #print(json.loads(response.content))
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
-        self.assertContains(response, "Monthly Plan 234", status_code=201)
+    
