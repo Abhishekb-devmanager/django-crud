@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
 from django.http import Http404, QueryDict
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,7 +8,7 @@ from .models import Plan, PlanFeature
 
 class PlanView(APIView):
     """This class defines the create behavior of our rest api."""
-    
+
     def get_object(self, pk):
         try:
             return Plan.objects.get(pk=pk)
@@ -90,16 +89,34 @@ class PlanFeatureView(APIView):
 
     def get(self, request, pk = None):
         if pk:
-            featureList = self.get_object(pk=pk)
+            feature_list = self.get_object(pk=pk)
             is_many=False
         else:
-            featureList = PlanFeature.objects.all()
+            feature_list = PlanFeature.objects.all()
             is_many = True
 
-        serializer = PlanFeatureSerializer(featureList, many=is_many)
+        serializer = PlanFeatureSerializer(feature_list, many=is_many)
         return Response(({"features":serializer.data}))
         
+    def put(self,request,pk):
+        """Handle update requests plan/<id>.
+        Returns 200 with updated object.
+        This does not creates object if it does not exists."""
 
+        saved_plan = self.get_object(pk=pk)
+
+        #Supports partial request - PATCH in Django might be broken.
+        serializer = PlanFeatureSerializer(instance=saved_plan, data=request.data, partial=True)
+
+        #TODO: this did not raise exception when request.data was mistakenly supplied
+        if serializer.is_valid(raise_exception=True):
+            plan_saved = serializer.save()
+
+        return Response({
+                "success": "Plan '{}' updated successfully".format(plan_saved.plan_name),
+                "plans":serializer.data
+            }, 
+            status=200)
 
 # class DetailsPlanView(generics.RetrieveUpdateDestroyAPIView):
 #     """This class handles the http GET, PUT and DELETE requests."""

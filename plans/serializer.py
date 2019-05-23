@@ -12,10 +12,21 @@ class PlanFeatureSerializer(serializers.ModelSerializer):
         fields = ('display_text','created_at')
     
     def update(self, instance, validated_data):
-        instance.features = validated_data.get('features', instance.features)
+        incoming_features_data = []
+        if hasattr(validated_data, 'features'):
+            incoming_features_data = validated_data.pop('features')
+            current_features = (instance.features).all()
+            current_features = list(current_features)
+
+        for feature_data in incoming_features_data:
+            #pop(0) will extract one object at a time leaving the remaining dict with -1 object. 
+            #so every iteration gives a fresh object to update.
+            feature = current_features.pop(0)
+            feature.display_text = feature_data.get('display_text', feature.display_text)
+            feature.save()
         instance.save()
         return instance
-    
+
 class PlanSerializer(serializers.ModelSerializer):
     """Serializer to map the Plan Model instance into JSON format."""
     features = PlanFeatureSerializer(many=True)
