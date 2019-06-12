@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User, UserPhone
-
+from api.utility.flatten import FlattenMixin
 class UserPhoneSerializer(serializers.ModelSerializer):
      """Serializer to map the UserPhone Model instance into JSON format."""
      class Meta:
@@ -14,7 +14,7 @@ class UserPhoneSerializer(serializers.ModelSerializer):
             return self.phone_no
 
         
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(FlattenMixin, serializers.ModelSerializer):
     """Serializer to map the User Model instance into JSON format."""
 
     #Changing the name of var to user_phone
@@ -33,6 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
             'staff',
             'user_phone'
         )
+        flatten = [('user_phone', UserPhoneSerializer)]
     
     def create(self, validated_data):
         #refer to writable nested 
