@@ -28,18 +28,40 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+# Added - 28th May
+
+AUTHENTICATION_BACKENDS = (
+
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    #'allauth.account.auth_backends.AuthenticationBackend',
+
+)
+
+
 # Application definition
 
 INSTALLED_APPS = [
     'plans.apps.PlansConfig',
+    'accounts.apps.UsersConfig', #added for custom user model
     'django.contrib.admin',
     'django.contrib.auth',
+    'django.contrib.sites',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
-    'rest_framework'
+    'rest_framework',
+    #'rest_framework.authtoken',
+    #'rest_auth',
+    #'allauth',
+    #'allauth.account',
+    #'rest_auth.registration',
+    #'accounts',
+    'phonenumber_field'
 ]
 
 MIDDLEWARE = [
@@ -52,7 +74,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'accounts.urls'
+ROOT_URLCONF = 'api.urls'
 
 TEMPLATES = [
     {
@@ -70,7 +92,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'accounts.wsgi.application'
+WSGI_APPLICATION = 'api.wsgi.application'
 
 
 # Database
@@ -132,3 +154,24 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#added 23/05/2019
+AUTH_USER_MODEL = 'accounts.User'
+PHONENUMBER_DB_FORMAT = 'E164'
+
+#added 28/05/2019
+#https://django-allauth.readthedocs.io/en/latest/advanced.html#custom-user-models
+# ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+# ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_EMAIL_REQUIRED = True
+
+# ACCOUNT_AUTHENTICATION_METHOD = 'email'
+SITE_ID = 1
+
+# ACCOUNT_FORMS = {
+# 'signup': 'accounts.forms.CustomSignupForm',
+# }
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'api.utility.exceptions.custom_exception_handler'
+}

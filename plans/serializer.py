@@ -22,7 +22,16 @@ class PlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ('plan_name', 'description', 'amount','currency','period', 'interval','notes', 'features')
+        fields = (
+            'plan_name', 
+            'description', 
+            'amount',
+            'currency',
+            'period',
+            'interval',
+            'notes', 
+            'features'
+        )
     #StringRelatedField may be used to represent the target of the relationship using its __str__ method.
     #Nested relationships can be expressed by using serializers as fields
 

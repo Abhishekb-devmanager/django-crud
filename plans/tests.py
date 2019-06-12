@@ -96,8 +96,8 @@ class PlanViewTestCase(TestCase):
             format="json"
         )    
         #print(json.loads(response.content))
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
-        self.assertContains(response, "Monthly Plan 1999999", status_code=201)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg="Plan creation failed.")
+
 
     def test_api_can_create_a_plan_with_features(self):
         """Test the api has plan creation capability."""
@@ -137,8 +137,8 @@ class PlanViewTestCase(TestCase):
                 format="json"
         )    
         #print(json.loads(response.content))
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
-        self.assertContains(response, "Fortnightly Plan", status_code=201)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg="Plan creation failed.")
+
 
     def test_api_cannot_create_a_plan_without_valid_amount(self):
         """Test the api has plan creation capability."""
@@ -149,8 +149,8 @@ class PlanViewTestCase(TestCase):
                 format="json"
         )    
         #print(json.loads(response.content))
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
-        self.assertContains(response, "Fortnightly Plan", status_code=201)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg="Plan creation failed.")
+
 
     def test_api_cannot_create_a_plan_without_valid_period(self):
         """Test the api has plan creation capability."""
@@ -161,8 +161,8 @@ class PlanViewTestCase(TestCase):
                 format="json"
         )    
         #print(json.loads(response.content))
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED, msg="Plan creation failed.")
-        self.assertContains(response, "Fortnightly Plan", status_code=201)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, msg="Plan creation failed.")
+
 
 
     def test_api_can_get_plans(self):
