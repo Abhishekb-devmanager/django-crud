@@ -10,3 +10,8 @@ class BadRequest(APIException):
     status_code = 400
     default_detail = 'The request data is missing mandaory parameters.'
     default_code = 'bad_request'
+
+class ValidationError(APIException):
+    status_code = 400
+    default_detail = 'The request data is invalid and not allowed.'
+    default_code = 'bad_request'

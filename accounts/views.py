@@ -39,10 +39,13 @@ class UserView(APIView):
 
         changed_request_data = self.prepare_data(request.data)
         #if changed_request_data.data.get('error') is None:
-        if changed_request_data.get('user_phone') is None:
-            serializer = UserSerializerWithoutPhone(data=changed_request_data, many=False)
-        else:
-            serializer = UserSerializer(data=changed_request_data, many=False)
+
+        serializer = self.get_user_serializer(changed_request_data)
+
+        # if changed_request_data.get('user_phone') is None:
+        #     serializer = UserSerializerWithoutPhone(data=changed_request_data, many=False)
+        # else:
+        #     serializer = UserSerializer(data=changed_request_data, many=False)
         
         if serializer.is_valid(raise_exception=True):
             user_saved = serializer.save()
@@ -60,11 +63,11 @@ class UserView(APIView):
         """Handle update requests plan/<id>.
         Returns 200 with updated object.
         This does not creates object if it does not exists."""
+        changed_request_data = self.prepare_data(request.data)
 
         saved_user = self.get_object(pk=pk)
 
-        #Supports partial request - PATCH in Django might be broken.
-        serializer = UserSerializer(instance=saved_user, data=request.data, partial=True)
+        serializer = self.get_user_serializer(changed_request_data, saved_user)
 
         #TODO: this did not raise exception when request.data was mistakenly supplied
         if serializer.is_valid(raise_exception=True):
@@ -112,32 +115,47 @@ class UserView(APIView):
         req['user_phone'] = user_phone_dict
         return req
 
+
     def prepare_data(self, req):
+        """Replaces '',whitespaces, or missing keys into None, 
+        changed phone_no into nested serializer representation, 
+        validated primary identities"""
         try:
             is_many = isinstance(req, list)
             if is_many:
                 raise TypeError('Multi user entry is prohibited')
+            
+            #strip spaces
+            recvd_email = req.get('email','').strip()
+            recvd_phone = req.get('phone_no','').strip()
+            recvd_pwd = req.get('password','').strip()
 
-            if req.get('email') is None and req.get('phone_no') is None:
+            #replace blank strings with None explicitly
+            recvd_email = None if recvd_email in (None, '', ' ') else recvd_email
+            recvd_phone = None if recvd_phone in (None, '', ' ') else recvd_phone
+            recvd_pwd = None if recvd_pwd in (None, '', ' ') else recvd_pwd
+
+            if recvd_email is None and recvd_phone is None:
                 raise KeyError('An email or a phone number is required to onboard.')
-            if req.get('password') is None:
+            if recvd_pwd is None:
                 raise KeyError('A password is mandatory to be assigned')
+
             
             #create a copy of the request data instead of editing the original data received.
-            if req.get('phone_no') is None and req.get('email') is not None:
+            if recvd_phone is None and recvd_email is not None:
                 prepared_data = req
             else:
                 prepared_data = copy.deepcopy(req)
 
-            if req.get('email') is None:
+            if recvd_email is None:
                 prepared_data = self.prepare_request_data_with_missing_email(prepared_data)
 
-            if req.get('phone_no') is not None:
+            if recvd_phone is not None:
                 prepared_data = self.prepare_request_data_for_phone(prepared_data)
 
             return prepared_data
 
-        except (KeyError, TypeError) as err:
+        except(KeyError, TypeError) as err:
             raise BadRequest(detail=err) 
 
     def get_phone_from_request_data(self, req):
@@ -150,3 +168,27 @@ class UserView(APIView):
         if copy_req.get('user_phone') is not None:
             copy_req.pop('user_phone')
         return copy_req
+    
+    # A naive manager(would be class) to return the right serializer based on data
+    # currently mean for user serializer
+    # returns based on whether user signed up with a phone no
+    def get_user_serializer(self, prepared_data, initial_data=None):
+        #default serializer to be returned.
+        try:
+            if prepared_data is None:
+                raise TypeError('Serializer needs data to initialize. Prepared data is None')
+        except TypeError as err:
+            return err
+            
+        if initial_data is not None:
+            if prepared_data.get('user_phone') is None:    
+                serializer = UserSerializerWithoutPhone(instance=initial_data ,data=prepared_data, many=False)
+            else:
+                serializer = UserSerializer(instance=initial_data, data=prepared_data, many=False)
+        else:
+            if prepared_data.get('user_phone') is None:    
+                serializer = UserSerializerWithoutPhone(data=prepared_data, many=False)
+            else:
+                serializer = UserSerializer(data=prepared_data, many=False)
+
+        return serializer

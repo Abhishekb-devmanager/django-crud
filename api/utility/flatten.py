@@ -14,7 +14,9 @@ class FlattenMixin(object):
             objrep = serializer.to_representation(getattr(obj, field))
             #Include their fields, prefixed, in the current   representation
             for key in objrep:
+                #set phone_no key with value of phone_no under user_phone
                 rep[key] = objrep[key]
                 #rep[field + "__" + key] = objrep[key]
+            #finally remove the user_phone field
             rep.pop(field)
         return rep
