@@ -53,10 +53,10 @@ class UserAdminChangeForm(forms.ModelForm):
                   #REMOVING PHONE NO ABILITY FROM ADMIN FOR NOW 6th June
                   #TODO: Add it again
                   #'phone_no',
-                  'active',
-                  'admin',
-                  'reader',
-                  'staff')
+                  'is_active',
+                  'is_admin',
+                  'is_reader',
+                  'is_staff')
 
     def clean_password(self):
         # Regardless of what the user provides, return the initial value.

@@ -20,4 +20,24 @@
 - During customizing the Django User model, create_user, create_superuser need to be defined as mandatory functions to be overridden under the mandatory UserManager class. UserManager is assigned to model "objects" which is the defualt manager otherwise.
 - Customizing Error responses: DRF needs to define custom_exception_handler with keys you need in the response to detail out error. https://www.django-rest-framework.org/api-guide/exceptions/
 - APIException is extended to customize error structure in response. Custom exceptions are defined as subclasses of APIException class and raised as exceptions in the try:except:raise: block. Django will use the customexception class to generate error responses. Define additional error keys to response in this class.
+- Authentication
+    - Create token as soon as user is created (signs up)
+        - Request is handled by a fresh view_auth.py which extending ObtainAuthToken, with custome serializer to accept emails. No model is connected with Serializer. Its not a model serializer.
+        - Simply used the user model to create token when user created - no post_save hooks used
+        - I misunderstood settings.py - AUTHENTICATION_BACKENDS vs DEFAULT_AUTHENTICATION_CLASSES
+        - AUTHENTICATION_BACKENDS - when I want email instead of username, I had write a custom authenticate method to override baseauth's and session auth's authenticate method and declare it as my custom backen in settings.
+        - DEFAULT_AUTHENTICATION_CLASSES - are declared then they will call the authenticate method on every API call hitting and returns the authorised user.
+        - Also misinterpreted that while declaring the serializer - I need to declare permission classes and authetication class on the top but this was not needed. Our custom field email and password needs to be freshly declared in the serializer.
+        - For a long time - returning tuple from authenticate method containing user object and token kept throwing error that tuple does not contains a backend attribute because the authenticate in __init.py__ annotates the user.backend = path of backend which was used to authenticate the credentials.
+        - Current two backends are configured - Custom and ModelBackend. ModelBackend is not playing any role here but it was configured by default so I have not removed it yet, seems like it will be used for admin panel.
+
+    - Implement login api which take email and password, matched in db
+    - Return token thus generated
+    - Protect the Plan api with authentication - only logged in users gets to see the plan listing
+        - Define authentication_classes (Token Auth in this case) and permission_classes (IsAuthenticated) on top of the view or on top function
+    - Users with is_admin TRUE will get access to plan creation and update abilities.
+    - GET function is available to all users
+    - POST, PUT, DELETE Protected for only admin users which is the superuser
+    - Protected by using Method Decorators and user_passes_test decorator. Method decorator converts a function decoratore to method decorator for use in Class based views.
+
 - Admin.py - UserAdmin class form settings are mandatory to be overridded, to provide an input to the base implementation. so missing the fieldsets implementation or search will lead to a django exception. the base implementation looks for username it is you need to tell in admin.py.

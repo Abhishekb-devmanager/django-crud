@@ -4,6 +4,8 @@ from api.utility.flatten import FlattenMixin
 from django.core import exceptions
 import django.contrib.auth.password_validation as validators
 from api.utility.customexceptions import ServiceUnavailable, BadRequest, ValidationError
+from django.contrib.auth.hashers import make_password
+from rest_framework.authtoken.models import Token
 
 class UserPhoneSerializer(serializers.ModelSerializer):
      """Serializer to map the UserPhone Model instance into JSON format.Nested under UserSerializer"""
@@ -41,17 +43,22 @@ class UserSerializer(FlattenMixin, serializers.ModelSerializer):
         flatten = [('user_phone', UserPhoneSerializer)]
     
     def create(self, validated_data):
-
+        validated_data['password'] = make_password(validated_data.get('password'))
         if 'user_phone' in validated_data:
             incoming_phn_no = validated_data.pop('user_phone')
             usrObj = User.objects.create(**validated_data)
             UserPhone.objects.create(owner=usrObj, phone_no=incoming_phn_no.get('phone_no'))
         else:
-           usrObj = User.objects.create(**validated_data) 
+           usrObj = User.objects.create(**validated_data)
+        Token.objects.create(user=usrObj)
         return usrObj
 
     def update(self, instance, validated_data):
-        instance.email = validated_data.get('email', instance.email)       
+        if 'user_phone' in validated_data:
+            incoming_phn_no = validated_data.pop('user_phone')
+            UserPhone.objects.create(owner=instance, phone_no=incoming_phn_no.get('phone_no'))
+
+        instance.email = validated_data.get('email', instance.email)
         instance.save()
         return instance
 
@@ -77,12 +84,14 @@ class UserSerializerWithoutPhone(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
+        validated_data['password'] = make_password(validated_data.get('password'))
         usrObj = User.objects.create(**validated_data) 
+        Token.objects.create(user=usrObj)
         return usrObj
     
     def update(self, instance, validated_data):
         instance.email = validated_data.get('email', instance.email)
-        instance.password = validated_data.get('password', instance.password)
+        instance.password = make_password(validated_data.get('password', instance.password))
         # should not update anyother parameter using apis. Pwd updation yet to come.
         #TODO: Password should not be updated like this it should have a changepassword 
         instance.save()

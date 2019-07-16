@@ -8,18 +8,21 @@
             "name": "Django",
             "type": "python",
             "request": "launch",
+            "justMyCode": false,
             "program": "${workspaceFolder}/manage.py",
             "args": [
                 "runserver",
                 "--noreload",
                 "--nothreading"
             ],
-            "django": true
+            "django": true,
+            
         },
         {
             "name": "Python: Current File (Integrated Terminal)",
             "type": "python",
             "request": "launch",
+            "justMyCode": false,
             "program": "${file}",
             "console": "integratedTerminal"
         },
@@ -27,6 +30,7 @@
             "name": "Python: Remote Attach",
             "type": "python",
             "request": "attach",
+            "justMyCode": false,
             "port": 8000,
             "host": "localhost",
             "pathMappings": [
@@ -40,6 +44,7 @@
             "name": "Python: Module",
             "type": "python",
             "request": "launch",
+            "justMyCode": false,
             "module": "enter-your-module-name-here",
             "console": "integratedTerminal"
         },
@@ -47,6 +52,7 @@
             "name": "Python: Django",
             "type": "python",
             "request": "launch",
+            "justMyCode": false,
             "program": "${workspaceFolder}/manage.py",
             "console": "integratedTerminal",
             "args": [
@@ -54,7 +60,7 @@
                 "--noreload",
                 "--nothreading"
             ],
-            "django": true
+            "django": true,
         },
         {
             "name": "Python: Flask",

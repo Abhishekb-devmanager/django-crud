@@ -6,8 +6,6 @@ from .forms import UserAdminCreationForm, UserAdminChangeForm
 
 from .models import User, GuestEmail
 
-
-
 class CustomUserAdmin(UserAdmin):
 
     # The forms to add and change user instances
@@ -32,12 +30,12 @@ class CustomUserAdmin(UserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin
     # that reference specific fields on auth.User.
-    list_display = ('email','get_phone_no','date_joined', 'admin')
-    list_filter = ('admin','reader')
+    list_display = ('email','get_phone_no','date_joined', 'is_admin')
+    list_filter = ('is_admin','is_reader')
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('full_name','date_joined')}), #full_name callable
-        ('Permissions', {'fields': ('admin','reader','staff')}),
+        ('Permissions', {'fields': ('is_admin','is_reader','is_staff')}),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin
     # overrides get_fieldsets to use this attribute when creating a user.

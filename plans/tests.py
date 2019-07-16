@@ -2,7 +2,9 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.urls import reverse
 from django.test import TestCase
+from rest_framework.authtoken.models import Token
 from .models import Plan
+from accounts.models import User
 import json
 
 # Create your tests here.
@@ -32,7 +34,14 @@ class PlanViewTestCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-         #fresh plan object created.
+
+         #fresh user object created. 
+        #self.user = User.objects.create_user(email="test@gmail.com", phone_no='+916667767676')
+        self.user = User.objects.create_superuser(email="superuser@gmail.com", password='Pass@123')
+        self.token = Token.objects.create(user=self.user)
+        tokenstr = "Token {}".format(self.token)
+        self.client.credentials(HTTP_AUTHORIZATION=tokenstr)
+        
         self.plan_data = [{
                             "plan_name": "Monthly Plan 1999999", 
                             "description": "This is test description", 
@@ -40,7 +49,7 @@ class PlanViewTestCase(TestCase):
                             "currency": "INR",
                             "period": "monthly",
                             "interval": 1,
-                            "notes": "Test Notes"
+                            "notes": "Test Notes",
                         }]
                          
         #testing update to the fresh plan created.

@@ -15,3 +15,8 @@ class ValidationError(APIException):
     status_code = 400
     default_detail = 'The request data is invalid and not allowed.'
     default_code = 'bad_request'
+
+class NotFound(APIException):
+    status_code = 404
+    default_detail = 'The requested resource does not exist.'
+    default_code = 'Not Found'

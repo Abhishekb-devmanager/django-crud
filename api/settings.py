@@ -31,14 +31,12 @@ ALLOWED_HOSTS = []
 # Added - 28th May
 
 AUTHENTICATION_BACKENDS = (
-
     # Needed to login by username in Django admin, regardless of `allauth`
-    'django.contrib.auth.backends.ModelBackend',
-
-    # `allauth` specific authentication methods, such as login by e-mail
-    #'allauth.account.auth_backends.AuthenticationBackend',
-
+    'accounts.authentication.CustomAuthentication',
+    'django.contrib.auth.backends.ModelBackend'
 )
+
+
 
 
 # Application definition
@@ -53,15 +51,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     'django_extensions',
     'rest_framework',
-    #'rest_framework.authtoken',
-    #'rest_auth',
-    #'allauth',
-    #'allauth.account',
-    #'rest_auth.registration',
-    #'accounts',
-    'phonenumber_field'
+    'rest_framework.authtoken',
+    'phonenumber_field',
 ]
 
 MIDDLEWARE = [
@@ -72,6 +66,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+
 ]
 
 ROOT_URLCONF = 'api.urls'
@@ -79,7 +75,7 @@ ROOT_URLCONF = 'api.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -158,20 +154,29 @@ STATIC_URL = '/static/'
 #added 23/05/2019
 AUTH_USER_MODEL = 'accounts.User'
 PHONENUMBER_DB_FORMAT = 'E164'
-
-#added 28/05/2019
-#https://django-allauth.readthedocs.io/en/latest/advanced.html#custom-user-models
-# ACCOUNT_USER_MODEL_USERNAME_FIELD = None
-# ACCOUNT_USERNAME_REQUIRED = False
-# ACCOUNT_EMAIL_REQUIRED = True
-
-# ACCOUNT_AUTHENTICATION_METHOD = 'email'
 SITE_ID = 1
 
-# ACCOUNT_FORMS = {
-# 'signup': 'accounts.forms.CustomSignupForm',
-# }
 
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'api.utility.exceptions.custom_exception_handler'
+    'EXCEPTION_HANDLER': 'api.utility.exceptions.custom_exception_handler',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+    #   'accounts.authentication.CustomAuthentication'
+        #'rest_framework.authentication.BasicAuthentication',
+        #'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        
+    )
 }
+
+INTERNAL_IPS = [
+    # ...
+    '127.0.0.1',
+    # ...
+]
+# Added 11th July
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+
+#added 15th July
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")

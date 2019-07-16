@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 from django.contrib.auth.models import PermissionsMixin
 from phonenumber_field.modelfields import PhoneNumberField
 from django.core.exceptions import ValidationError
+from rest_framework.authtoken.models import Token
 
 class GuestEmail(models.Model):
     email      = models.EmailField(
@@ -25,7 +26,7 @@ class GuestEmail(models.Model):
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, phone_no, password=None, is_admin = False, is_reader = False, is_active = True):
+    def create_user(self, email, phone_no=None, password=None, is_admin = False, is_reader = False, is_active = True):
         """
         Creates and saves a User with the given email, date of
         birth and password.
@@ -35,30 +36,34 @@ class UserManager(BaseUserManager):
             email=self.normalize_email(email),
         )
         #user_obj.phone_no = phone_no
-        user_obj.admin = is_admin
-        user_obj.reader = is_reader
-        user_obj.active = is_active
+        # user_obj.admin = is_admin
+        # user_obj.reader = is_reader
+        # user_obj.active = is_active
+        user_obj.is_admin = is_admin
+        user_obj.is_reader = is_reader
+        user_obj.is_active = is_active
         user_obj.set_password(password)
         user_obj.save(using=self._db)
-
+        
         try:
             if phone_no is not None:
                 phone = UserPhone(User=user_obj, phone_no=phone_no)
                 phone.save
         except:
             pass
-
+        Token.objects.create(user=user_obj)
         return user_obj
 
     #def create_superuser(self, email, date_of_birth, password):
-    def create_superuser(self, phone_no, email, password):
+    #def create_superuser(self, phone_no, email, password):
+    def create_superuser(self, email, password):
         """
         Creates and saves a superuser with the given email, date of
         birth and password.
         """
         user = self.create_user(
             email,
-            phone_no,
+            #phone_no,
             password=password,
             is_admin = True,
             is_reader=True,
@@ -85,7 +90,8 @@ class UserPhone(models.Model):
         help_text="Phone last updated on") 
 
     def __str__(self):
-        return self.phone_no
+        return str(self.phone_no)
+    
 
 class User(AbstractBaseUser, PermissionsMixin):
     email      = models.EmailField(
@@ -94,10 +100,15 @@ class User(AbstractBaseUser, PermissionsMixin):
                     unique=True
                 ) 
     date_joined = models.DateTimeField(verbose_name ='date joined', auto_now_add=True)
-    active = models.BooleanField(default=True)
-    admin = models.BooleanField(default=False)
-    reader = models.BooleanField(default=True)
-    staff = models.BooleanField(default=False)
+    # active = models.BooleanField(default=True)
+    # admin = models.BooleanField(default=False)
+    # reader = models.BooleanField(default=True)
+    # staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_admin = models.BooleanField(default=False)
+    is_reader = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+
     modified_at = models.DateTimeField(verbose_name ='date modified',auto_now=True, help_text="Time when this is modified on admin panel - to be entered")
     created_at= models.DateTimeField(auto_now_add=True, help_text="Time when it was created on admin panel")
 
@@ -115,6 +126,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         if self.email:
             return self.email
+        
+    def has_related_object(self):
+        has_user_phone = False
+        try:
+            has_user_phone = (self.user_phone is not None)
+        except UserPhone.DoesNotExist:
+            pass
+        return has_user_phone
             
     def clean(self):
         if not self.email:
@@ -139,27 +158,28 @@ class User(AbstractBaseUser, PermissionsMixin):
     # def get_full_name(self):
     #     return self.first_name + self.last_name
     
-    @property
-    def is_admin(self):
-        "Is the user a member of staff?"
-        # Simplest possible answer: All admins are staff
-        return self.admin
+    # @property
+    # def is_admin(self):
+    #     "Is the user a member of staff?"
+    #     # Simplest possible answer: All admins are staff
+    #     return self.admin
 
-    @property
-    def is_reader(self):
-        "Is the user a reader?"
-        # Simplest possible answer: All admins are staff
-        return self.reader
+    # @property
+    # def is_reader(self):
+    #     "Is the user a reader?"
+    #     # Simplest possible answer: All admins are staff
+    #     return self.reader
 
-    @property
-    def is_active(self):
-        "Is the user active?"
-        # Simplest possible answer: All admins are staff
-        return self.active
+    # @property
+    # def is_active(self):
+    #     "Is the user active?"
+    #     # Simplest possible answer: All admins are staff
+    #     return self.active
 
-    @property
-    def is_staff(self):
-        "Is the user active?"
-        # Simplest possible answer: All admins are staff
-        return self.staff
+    # @property
+    # def is_staff(self):
+    #     "Is the user active?"
+    #     # Simplest possible answer: All admins are staff
+    #     return self.staff
 
+    
