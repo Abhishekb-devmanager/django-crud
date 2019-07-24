@@ -2,7 +2,8 @@ from rest_framework.test import APIClient
 from rest_framework import status
 from django.urls import reverse
 from django.test import TestCase
-from .models import User, UserPhone
+from rest_framework.authtoken.models import Token
+from .models import User, UserPhone, GuestEmail
 from phonenumber_field.phonenumber import PhoneNumber
 from django.contrib.sites.shortcuts import get_current_site
 import json
@@ -15,10 +16,10 @@ class UserModelTestCase(TestCase):
         """Define the test client and other test variables."""
         self.user = User(
                         email="abhishekb.bansal@devmanager.com",
-                        active=1,
-                        admin= 1,
-                        staff= 1,
-                        reader= 1
+                        is_active=1,
+                        is_admin= 1,
+                        is_staff= 1,
+                        is_reader= 1
                     )
 
     def test_model_can_create_a_user(self):
@@ -36,6 +37,7 @@ class UserViewTestCase(TestCase):
         self.user_data = {
                             "email":"akm@gmail.com",
                             "phone_no":"+919192949596",
+                            "code":1234,
                             "password":"Pass@123",
                             "active": 1,
                             "admin": 0,
@@ -47,13 +49,15 @@ class UserViewTestCase(TestCase):
         self.user_data_without_email = {
                                             "email":"",
                                             "phone_no":"+919899093440",
-                                            "password":"Pass@123"
+                                            "password":"Pass@123",
+                                            "code":1234
                                         }
 
         self.user_data_without_phoneno = {
                                             "email":"2@gml.com",
                                             "phone_no":"",
-                                            "password":"Pass@123"
+                                            "password":"Pass@123",
+                                            "code":1234
                                         }
 
         #TC should pass when ph is avail but not email key 
@@ -62,38 +66,58 @@ class UserViewTestCase(TestCase):
         #Email and phone no is allowed to be changed only by the logged in user
         self.user_data_without_email_key = {
                                             "user_phone":{"phone_no":"+919899093440"},
-                                            "password":"Pass@123"
+                                            "password":"Pass@123",
+                                            "code":1234
                                         }
 
         #TC should fail in case of invalid password (less than 8 chars)
         self.user_data_with_short_pwd = {
                                             "email":"a@g.com",
-                                            "password":"qwert"
+                                            "password":"qwert",
+                                            "code":1234
                                         }
         self.user_data_with_allsmallcase_pwd = {
                                             "email":"a@g.com",
-                                            "password":"abhishek"
+                                            "password":"abhishek",
+                                            "code":1234
                                         }
 
         self.user_data_without_any_key = {}
+
+        self.create_new_verified_user()
+
+    def create_new_verified_user(self):
+        verified_user = User(
+            email="test_user@gmail.com",
+            password="Pass@123"
+        )
+        verified_user.save()
+        # all_users =User.objects.all()
+        # if all_users is not None:
+        #     all_users.delete()
+        self.token = Token.objects.create(user=verified_user)
+        tokenstr = "Token {}".format(self.token)
+        self.client.credentials(HTTP_AUTHORIZATION=tokenstr)
+
 
        
     #TC should pass when ph is avail but not email
     def test_api_can_create_a_user(self):
         """Test the api has User creation capability."""
-        #Create a User using API, also it can be created using user model.
+        #Create a User using API, also it can be created using user model. 
+        
+        guest_user = GuestEmail(
+            email=self.user_data.get('email'),
+            phone_no=self.user_data.get('phone_no'),
+            code=1234,
+        )
+        guest_user.save()
         response = self.client.post(
             reverse("adduser"),
             self.user_data,
             format="json"
         )    
         responseJson = json.loads(response.content)
-        print(responseJson)
-        # self.assertContains(
-        #                 response, 
-        #                 self.user_data.get('email'), 
-        #                 status_code=201
-        #             )
         if responseJson.get('errors', None) is not None:    
             self.assertEqual(
                     response.status_code, 
@@ -106,13 +130,17 @@ class UserViewTestCase(TestCase):
     #TC should pass with email but without phone no
     def test_api_can_create_a_user_with_email_only(self):
         """Test the api has User creation capability with email only."""
-
+        guest_user = GuestEmail(
+            email=self.user_data_without_phoneno.get('email'),
+            phone_no=self.user_data_without_phoneno.get('phone_no'),
+            code=1234,
+        )
+        guest_user.save()
         response = self.client.post(
             reverse("adduser"),
             self.user_data_without_phoneno,
             format="json"
         )    
-        #print(json.loads(response.content))
         self.assertEqual(
                 response.status_code, 
                 status.HTTP_201_CREATED, 
@@ -127,7 +155,16 @@ class UserViewTestCase(TestCase):
     #TC should pass with phone no but without e
     def test_api_can_create_a_user_with_phone_only(self):
         """Test the api has User creation capability with phone only."""
+        current_site = get_current_site(self.client.request).domain
+        phn = self.user_data_without_email.get('phone_no')
+        autogenerated_email = "{}@{}".format(phn,current_site)
 
+        guest_user = GuestEmail(
+            email=autogenerated_email,
+            phone_no=self.user_data_without_email.get('phone_no'),
+            code=1234
+        )
+        guest_user.save()
         response = self.client.post(
             reverse("adduser"),
             self.user_data_without_email,
@@ -140,13 +177,11 @@ class UserViewTestCase(TestCase):
                 status.HTTP_201_CREATED, 
                 msg="User without email but phone only - creation failed."
             )
-        current_site = get_current_site(self.client.request).domain
-        phn = self.user_data_without_email.get('phone_no')
-        autogenerated_email = "{}@{}".format(phn,current_site)
+        
         self.assertEqual(
                 responseJson['users']['email'], 
                 autogenerated_email, 
-                msg="User without email but phone only - creation failed."
+                msg='{}-{}'.format(responseJson.get('errors'),"User without email but phone only - creation failed.")
             )
         self.assertContains(
                         response, 
@@ -157,7 +192,11 @@ class UserViewTestCase(TestCase):
     #TC should fail without valid pwd
     def test_api_cannot_create_a_user_with_invalid_pwd_min_len(self):
         """Test the api has User creation capability with phone only."""
-
+        guest_user = GuestEmail(
+            email=self.user_data_with_short_pwd.get('email'),
+            code=1234
+        )
+        guest_user.save()   
         response = self.client.post(
             reverse("adduser"),
             self.user_data_with_short_pwd,
@@ -185,7 +224,7 @@ class UserViewTestCase(TestCase):
         )    
         self.assertEqual(
                 response.status_code, 
-                status.HTTP_400_BAD_REQUEST, 
+                status.HTTP_401_UNAUTHORIZED, 
                 msg="User creation failed due to small case password.User should have atleast 8 characters, 1 capital letter, 1 number"
             )
         
@@ -293,7 +332,7 @@ class UserViewTestCase(TestCase):
                 format="json"
             ) 
         responseJson = json.loads(new_response.content)
-        print(responseJson)
+        #print(responseJson)
         if responseJson.get('errors', None) is not None:    
             self.assertEqual(
                     new_response.status_code, 
@@ -309,19 +348,6 @@ class UserViewTestCase(TestCase):
                             updated_phn['phone_no'],
                             msg="User with {} failed to update with ph {}".format(new_user.email,updatedObjName.phone_no)
                         )
-        #testOnj1 = new_user.userphone_set.all()
-        #testOnj2 = new_user.userphone.all()
-        #print(updatedObjName.phone_no)
-        #print(updatedObjName.owner)
-        #print(testOnj1)
-        #print(testOnj2)
-        # print(hasattr(new_user, 'userphone'))
-        # print(hasattr(new_user, 'user_phone'))
-        # print(hasattr(new_user, 'userphone_set'))
-
-
-
-
 
 
     def test_api_can_update_user_email_later(self):
@@ -348,21 +374,28 @@ class UserViewTestCase(TestCase):
                 updated_email,
                 format="json"
             ) 
-        responseJson = json.loads(new_response.content)
-        if responseJson.get('errors', None) is not None:    
+        response_json = json.loads(new_response.content)
+        if response_json.get('errors', None) is not None:    
             self.assertEqual(
                     new_response.status_code, 
                     status.HTTP_200_OK, 
-                    msg='{}-{}'.format(responseJson['errors'],"User email update Failed")
+                    msg='{}-{}'.format(response_json['errors'],"User email update Failed")
                 )
-        
-        # self.assertEqual(
-        #     new_response.status_code, 
-        #     status.HTTP_200_OK, 
-        #     msg="Updated User email Failed"
-        # )
         try:
             updatedObjName = User.objects.get(email=updated_email.get("email"))
         except User.DoesNotExist:
             updatedObjName = None
         self.assertIsNotNone(updatedObjName)
+
+    def test_api_can_send_OTP(self):
+        response = self.client.post(
+            reverse("usersignup"),
+            {"email":"inttest@pop.com"},
+            format="json"
+        )    
+
+        self.assertEqual(
+                response.status_code, 
+                status.HTTP_201_CREATED, 
+                msg="OTP Generation failed."
+            )

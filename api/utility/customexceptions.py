@@ -20,3 +20,8 @@ class NotFound(APIException):
     status_code = 404
     default_detail = 'The requested resource does not exist.'
     default_code = 'Not Found'
+
+class NotAuthorized(APIException):
+    status_code = 401
+    default_detail = 'The requested resource does not exist.'
+    default_code = 'Not Found'

@@ -7,22 +7,41 @@ from django.contrib.auth.models import PermissionsMixin
 from phonenumber_field.modelfields import PhoneNumberField
 from django.core.exceptions import ValidationError
 from rest_framework.authtoken.models import Token
+#Signal config
+from django.db.models.signals import post_save
+from .emailmanager import send_verification_email
+from .emailmanager import send_welcome_email
 
 class GuestEmail(models.Model):
+    #removed unique constraint to allow user to retry registration in case he does not completes the 
+    #sign up after entering email, and retries using the same email, though our OTP is wasted and user
+    #only gets to know his email already registered, but for other users, we capture the email id
+    #atleast. A repeat entry in this table might also indicate that user is struggling to sign up.
     email      = models.EmailField(
                     verbose_name = 'email address', 
-                    max_length = 255, 
-                    unique=True
+                    max_length = 255 
                 )
-    is_active = models.BooleanField(default=True)
-    modified_at = models.DateTimeField(
-        verbose_name ='date modified',
-        auto_now_add=True, 
-        help_text="email last updated on")
+    phone_no   = PhoneNumberField(null=True)
 
+    is_active = models.BooleanField(default=True)
+    code = models.IntegerField( 
+            null=True,
+            help_text='This is sent to user on his email entry'
+        )
+    created_at = models.DateTimeField(
+        verbose_name ='date created',
+        auto_now_add=True, 
+        help_text="email last created on"
+        )
+    
+    modified_at = models.DateTimeField(
+        verbose_name ='date created',
+        auto_now=True, 
+        help_text="email last updated on"
+        )
+    
     def __str__(self):
         return self.email
-    
 
 
 class UserManager(BaseUserManager):
@@ -100,10 +119,6 @@ class User(AbstractBaseUser, PermissionsMixin):
                     unique=True
                 ) 
     date_joined = models.DateTimeField(verbose_name ='date joined', auto_now_add=True)
-    # active = models.BooleanField(default=True)
-    # admin = models.BooleanField(default=False)
-    # reader = models.BooleanField(default=True)
-    # staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
     is_reader = models.BooleanField(default=True)
@@ -181,5 +196,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     #     "Is the user active?"
     #     # Simplest possible answer: All admins are staff
     #     return self.staff
+
+post_save.connect(send_verification_email, sender=GuestEmail)
+post_save.connect(send_welcome_email, sender=User)
 
     

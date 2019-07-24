@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.test import TestCase
 from rest_framework.authtoken.models import Token
 from .models import Plan
-from accounts.models import User
+from accounts.models import User, UserManager
 import json
 
 # Create your tests here.
@@ -34,14 +34,8 @@ class PlanViewTestCase(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-
          #fresh user object created. 
         #self.user = User.objects.create_user(email="test@gmail.com", phone_no='+916667767676')
-        self.user = User.objects.create_superuser(email="superuser@gmail.com", password='Pass@123')
-        self.token = Token.objects.create(user=self.user)
-        tokenstr = "Token {}".format(self.token)
-        self.client.credentials(HTTP_AUTHORIZATION=tokenstr)
-        
         self.plan_data = [{
                             "plan_name": "Monthly Plan 1999999", 
                             "description": "This is test description", 
@@ -96,9 +90,26 @@ class PlanViewTestCase(TestCase):
                         "notes": "Test Notes"
                          }
 
+    def create_test_user(self,email, password):
+        user = User.objects.create_superuser(email=email, password=password)
+        response = self.client.post(
+            reverse("authenticate"),
+            {
+                "email":email,
+                "password":password
+            },
+            format="json"
+        )
+        token = json.loads(response.content).get('auth').get('token')
+        tokenstr = "Token {}".format(token)
+        print(tokenstr)
+        self.client.credentials(HTTP_AUTHORIZATION=tokenstr)
+
     def test_api_cannot_create_a_plan_without_features(self):
         """Test the api has plan creation capability."""
         #Create a plan using API, also it can be created using plan model.
+        #self.token.delete()
+        self.create_test_user(email="superuser8@gmail.com", password="Pass@12345")
         response = self.client.post(
             reverse("create"),
             self.plan_data,
@@ -111,6 +122,7 @@ class PlanViewTestCase(TestCase):
     def test_api_can_create_a_plan_with_features(self):
         """Test the api has plan creation capability."""
         #Create a plan using API, also it can be created using plan model.
+        self.create_test_user(email="superuser2@gmail.com", password='Pass@1231')
         response = self.client.post(
             reverse("create"),
                 [{
@@ -139,6 +151,7 @@ class PlanViewTestCase(TestCase):
 
     def test_api_cannot_create_a_plan_without_amount(self):
         """Test the api has plan creation capability."""
+        self.create_test_user(email="superuser3@gmail.com", password='Pass@1232')
         #Create a plan using API, also it can be created using plan model.
         response = self.client.post(
             reverse("create"),
@@ -151,6 +164,7 @@ class PlanViewTestCase(TestCase):
 
     def test_api_cannot_create_a_plan_without_valid_amount(self):
         """Test the api has plan creation capability."""
+        self.create_test_user(email="superuser4@gmail.com",password='Pass@1233')
         #Create a plan using API, also it can be created using plan model.
         response = self.client.post(
             reverse("create"),
@@ -164,6 +178,7 @@ class PlanViewTestCase(TestCase):
     def test_api_cannot_create_a_plan_without_valid_period(self):
         """Test the api has plan creation capability."""
         #Create a plan using API, also it can be created using plan model.
+        self.create_test_user(email="superuser5@gmail.com",password='Pass@1234')
         response = self.client.post(
             reverse("create"),
                 self.invalid_plan_data_payload_3,
@@ -224,6 +239,8 @@ class PlanViewTestCase(TestCase):
         """Test the api update plans."""
         #Again creating plan to make this test independent, it seems
         #Test DB is destroyed before this test can fetch the created object.
+        self.create_test_user(email="superuser6@gmail.com",password='Pass@1234')
+
         new_plan = Plan(
                         plan_name="Monthly Test PUT Request", 
                         description="This is test description",

@@ -34,10 +34,10 @@ class UserSerializer(FlattenMixin, serializers.ModelSerializer):
             'email',
             'password',
             'date_joined', 
-            'active',
-            'admin',
-            'reader',
-            'staff',
+            'is_active',
+            'is_admin',
+            'is_reader',
+            'is_staff',
             'user_phone'
         )
         flatten = [('user_phone', UserPhoneSerializer)]
@@ -77,10 +77,10 @@ class UserSerializerWithoutPhone(serializers.ModelSerializer):
             'email',
             'password',
             'date_joined', 
-            'active',
-            'admin',
-            'reader',
-            'staff',
+            'is_active',
+            'is_admin',
+            'is_reader',
+            'is_staff',
         )
 
     def create(self, validated_data):

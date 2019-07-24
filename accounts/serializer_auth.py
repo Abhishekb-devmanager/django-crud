@@ -20,7 +20,6 @@ class CustomAuthTokenSerializer(serializers.Serializer):
 
         if email and password:
             authenticated_user  = authenticate(request=self.context.get('request'))
-            token = authenticated_user.auth_token #Response will nto contain the token.
             if not authenticated_user:
                 msg = _('Unable to log in with provided credentials.')
                 raise serializers.ValidationError(msg, code='authorization')
@@ -48,7 +47,6 @@ class AuthTokenSerializerWithPhone(serializers.Serializer):
 
         if phone_no and password:
             authenticated_user  = authenticate(request=self.context.get('request'))
-            token = authenticated_user.auth_token #Response will nto contain the token.
             if not authenticated_user:
                 msg = _('Unable to log in with provided credentials.')
                 raise serializers.ValidationError(msg, code='authorization')

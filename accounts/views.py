@@ -1,22 +1,43 @@
 from django.shortcuts import render
 from django.http import Http404
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import User, UserManager, UserPhone
+from .models import GuestEmail, User, UserManager, UserPhone
 from .serializer import UserSerializer, UserPhoneSerializer, UserSerializerWithoutPhone
-from api.utility.customexceptions import ServiceUnavailable, BadRequest, NotFound
+from api.utility.customexceptions import ServiceUnavailable, BadRequest, NotFound, NotAuthorized
 import copy
 
 class UserView(APIView):
     """This class defines the create behavior of our rest api."""
-    
+    """This class defines the create behavior of our rest api."""
+    def auth_check(self):
+        is_authorised = False
+        if not self.is_anonymous:
+            if self.is_authenticated and self.is_active:
+                is_authorised = True
+        return is_authorised
+
     def get_object(self, pk):
         try:
             return User.objects.get(pk=pk)
-        except User.DoesNotExist:
+        except:
             raise NotFound(detail="Resource Not Found")
+
+    def get_object_by_email(self, email):
+        try:
+            return GuestEmail.objects.get(email=email)
+        except:
+            raise NotAuthorized(detail="Invalid email entered.")
+    
+    def get_object_by_phone(self, phone):
+        try:
+            return GuestEmail.objects.get(phone_no=phone)
+        except:
+            raise NotAuthorized(detail="Invalid phone entered.")
 
     def get(self, request, pk = None):
         if pk:
@@ -37,13 +58,23 @@ class UserView(APIView):
         return Response(({"users":serializer.data}))
         
     #how to disallow request - plan/24 with post action
-    #TODO: Need to check the incoming request data structure, avoid any key errors
-
     def post(self, request):
         """Handle update requests user/<id>.
         Returns 201 Resource created with created objects as a list."""
+        try:
+            is_many = isinstance(request.data, list)
+            if is_many:
+                raise TypeError('Multiple users are prohibited')
+        except(KeyError, TypeError) as err:
+            raise BadRequest(detail=err) 
+
+        self.verify_request_requirements(request.data)
 
         changed_request_data = self.prepare_data(request.data)
+
+        if self.verify_otp(changed_request_data) is False:
+            raise BadRequest(detail='Invalid OTP entered.')
+
         serializer = self.get_user_serializer(changed_request_data)
 
         if serializer.is_valid(raise_exception=True):
@@ -55,11 +86,20 @@ class UserView(APIView):
                         }, 
                         status=201
                         )
-    
+    @method_decorator(user_passes_test(auth_check), name="dispatch")
     def put(self,request,pk):
-        """Handle update requests plan/<id>.
+        """Handle update requests user/<id>.
         Returns 200 with updated object.
         This does not creates object if it does not exists."""
+
+        try:
+            is_many = isinstance(request.data, list)
+            if is_many:
+                raise TypeError('Multiple users are prohibited')
+        except(KeyError, TypeError) as err:
+            raise BadRequest(detail=err) 
+
+        self.verify_request_requirements(request.data)
         changed_request_data = self.prepare_data(request.data)
 
         saved_user = self.get_object(pk=pk)
@@ -75,7 +115,8 @@ class UserView(APIView):
                 "users":serializer.data
             }, 
             status=200)
-
+    
+    @method_decorator(user_passes_test(auth_check), name="dispatch")
     def delete(self, request, pk):
         # Get object with this pk
         user = self.get_object(pk=pk)
@@ -113,19 +154,41 @@ class UserView(APIView):
         return req
 
 
-    def prepare_data(self, req):
+    def prepare_data(self, req_data):
         """Replaces '',whitespaces, or missing keys into None, 
         changed phone_no into nested serializer representation, 
         validated primary identities"""
+
+        #create a copy of the request data instead of editing the original data received.
+        # request data is immutable
+        recvd_email = req_data.get('email','').strip()
+        recvd_phone = req_data.get('phone_no','').strip()
+
+        #replace blank strings with None explicitly
+        recvd_email = None if recvd_email in (None, '', ' ') else recvd_email
+        recvd_phone = None if recvd_phone in (None, '', ' ') else recvd_phone
+
+        if recvd_phone is None and recvd_email is not None:
+            prepared_data = req_data
+        else:                
+            prepared_data = copy.deepcopy(req_data)
+
+        # POST only condition,record already has the email address or phone 
+        # so this should not happen in PUT
+        if recvd_email is None and self.request.method == 'POST':
+            prepared_data = self.prepare_request_data_with_missing_email(prepared_data)
+
+        if recvd_phone is not None:
+            prepared_data = self.prepare_request_data_for_phone(prepared_data)
+
+        return prepared_data
+
+    def verify_request_requirements(self, req_data):
         try:
-            is_many = isinstance(req, list)
-            if is_many:
-                raise TypeError('Multi user entry is prohibited')
-            
             #strip spaces
-            recvd_email = req.get('email','').strip()
-            recvd_phone = req.get('phone_no','').strip()
-            recvd_pwd = req.get('password','').strip()
+            recvd_email = req_data.get('email','').strip()
+            recvd_phone = req_data.get('phone_no','').strip()
+            recvd_pwd = req_data.get('password','').strip()
 
             #replace blank strings with None explicitly
             recvd_email = None if recvd_email in (None, '', ' ') else recvd_email
@@ -137,35 +200,10 @@ class UserView(APIView):
             if recvd_pwd is None:
                 raise KeyError('A password is mandatory to be assigned')
 
-            
-            #create a copy of the request data instead of editing the original data received.
-            if recvd_phone is None and recvd_email is not None:
-                prepared_data = req
-            else:
-                prepared_data = copy.deepcopy(req)
-
-            if recvd_email is None and self.request.method == 'POST':
-                prepared_data = self.prepare_request_data_with_missing_email(prepared_data)
-
-            if recvd_phone is not None:
-                prepared_data = self.prepare_request_data_for_phone(prepared_data)
-
-            return prepared_data
-
         except(KeyError, TypeError) as err:
             raise BadRequest(detail=err) 
 
-    def get_phone_from_request_data(self, req):
-        if req.data.get('user_phone') is not None:
-            phn_recvd = req.data.get('user_phone').get('phone_no')
-        return phn_recvd
-
-    def remove_phone_from_request_data(self, req):
-        copy_req = copy.deepcopy(req.data)
-        if copy_req.get('user_phone') is not None:
-            copy_req.pop('user_phone')
-        return copy_req
-    
+        
     # A naive manager(would be class) to return the right serializer based on data
     # currently mean for user serializer
     # returns based on whether user signed up with a phone no
@@ -176,16 +214,50 @@ class UserView(APIView):
                 raise TypeError('Serializer needs data to initialize. Prepared data is None')
         except TypeError as err:
             return err
-            
+        # hanling PUT in case of update
         if initial_data is not None:
             if prepared_data.get('user_phone') is None:    
                 serializer = UserSerializerWithoutPhone(instance=initial_data ,data=prepared_data, many=False)
             else:
                 serializer = UserSerializer(instance=initial_data, data=prepared_data, many=False)
-        else:
+        else: # hanling POST in case of create
             if prepared_data.get('user_phone') is None:    
                 serializer = UserSerializerWithoutPhone(data=prepared_data, many=False)
             else:
                 serializer = UserSerializer(data=prepared_data, many=False)
 
         return serializer
+
+    def verify_otp(self, request_data):
+        is_otp_verified = False
+
+        otp = request_data.get('code','')
+        try:
+            otp = int(otp)
+        except ValueError:
+            raise NotAuthorized(detail="Please enter the OTP sent to the entered email or phone no")
+
+        #TODO: Create a separate santize function as this code is repeating
+        recvd_email = request_data.get('email','').strip()
+        recvd_phone = request_data.get('phone_no','').strip()
+        #replace blank strings with None explicitly
+        recvd_email = None if recvd_email in (None, '', ' ') else recvd_email
+        recvd_phone = None if recvd_phone in (None, '', ' ') else recvd_phone
+
+        if recvd_email is not None:
+            userobj = self.get_object_by_email(email=recvd_email)         
+        elif recvd_phone is not None:
+            userobj = self.get_object_by_phone(phone=recvd_phone)
+
+        if userobj is None:
+            raise NotAuthorized(detail="Incorrect email or phone number entered.")
+
+        if userobj is not None and otp == userobj.code:
+            is_otp_verified = True
+        else:
+            raise NotAuthorized("Invalid OTP entered.")
+        return is_otp_verified
+
+
+
+

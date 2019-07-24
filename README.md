@@ -39,5 +39,7 @@
     - GET function is available to all users
     - POST, PUT, DELETE Protected for only admin users which is the superuser
     - Protected by using Method Decorators and user_passes_test decorator. Method decorator converts a function decoratore to method decorator for use in Class based views.
-
+- Django Signals can be used to notify events to observer/receiver classes. 2 ways - .connect, @receiver decorator
+- @receiver may be a better choice for custom signals, connect seems to better for inbuilt signals.
+- GuestEmail is finally entered into user table once the otp is verified.
 - Admin.py - UserAdmin class form settings are mandatory to be overridded, to provide an input to the base implementation. so missing the fieldsets implementation or search will lead to a django exception. the base implementation looks for username it is you need to tell in admin.py.
