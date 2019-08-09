@@ -56,10 +56,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'phonenumber_field',
+    'oauth2_provider', #new addition 30/07/2019
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware', #new addition 30/07/2019 should be on top 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -67,10 +70,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-
 ]
 
+
 ROOT_URLCONF = 'api.urls'
+#TODO: This should not be a production setting
+CORS_ORIGIN_ALLOW_ALL = True
 
 TEMPLATES = [
     {
@@ -156,16 +161,29 @@ AUTH_USER_MODEL = 'accounts.User'
 PHONENUMBER_DB_FORMAT = 'E164'
 SITE_ID = 1
 
+OAUTH2_PROVIDER = {
+    'SCOPES': {
+        'read': 'Read scope',
+        'write': 'Write scope',
+    },
+
+    'CLIENT_ID_GENERATOR_CLASS': 'oauth2_provider.generators.ClientIdGenerator',
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 24*60*60
+}
 
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'api.utility.exceptions.custom_exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': (
-    #   'accounts.authentication.CustomAuthentication'
         #'rest_framework.authentication.BasicAuthentication',
         #'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-        
-    )
+        #'rest_framework.authentication.TokenAuthentication',
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        'accounts.authentication.BearerTokenAuthentication', #subclass of TokenAuthentication
+    ),
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ]
 }
 
 INTERNAL_IPS = [
@@ -180,3 +198,6 @@ LOGOUT_REDIRECT_URL = 'home'
 #added 15th July
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
+
+#added 7th August
+TOKEN_EXPIRED_AFTER_SECONDS = 24*60*60

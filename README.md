@@ -42,4 +42,16 @@
 - Django Signals can be used to notify events to observer/receiver classes. 2 ways - .connect, @receiver decorator
 - @receiver may be a better choice for custom signals, connect seems to better for inbuilt signals.
 - GuestEmail is finally entered into user table once the otp is verified.
+
+- OAUTH2.0
+    - Used DJango OAuth ToolKit
+    - http://localhost:8000/o/token/ - to be used to get token or refresh token
+    - http://localhost:8000/o/revoke_token/ - to be used to logout or revoke token
+    - Revoke token request should be x-www-form-urlencoded.
+    - Default authentication classes - OAUTH2 should be before tokenauthentication as this willl raise the exception earlier and will not let the flow to reach oauth2authentication classes.
+    - This is how we are able to make the token and oauth authentication to work together
+    - We will need to implement scope level checks, TokenHasReadWrite Scope permission implement at Class XYX(APIView) level does not lets TokenAuth to work with OAUth ans also restricts all post get function in the view to be OAuth and Scope restricted.
+- In AUTH - not OAUTH - If a valid auth token is passed in a request without user credentials - if expired a new token will be returned. 
+- We also learnt how to convert a request.user object jsonserializable using serializer context.
+- utility is_user_authenticated
 - Admin.py - UserAdmin class form settings are mandatory to be overridded, to provide an input to the base implementation. so missing the fieldsets implementation or search will lead to a django exception. the base implementation looks for username it is you need to tell in admin.py.

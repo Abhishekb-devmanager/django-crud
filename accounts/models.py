@@ -43,7 +43,6 @@ class GuestEmail(models.Model):
     def __str__(self):
         return self.email
 
-
 class UserManager(BaseUserManager):
     def create_user(self, email, phone_no=None, password=None, is_admin = False, is_reader = False, is_active = True):
         """
@@ -89,7 +88,7 @@ class UserManager(BaseUserManager):
             is_active= True
         )
         return user
-
+    
 class UserPhone(models.Model):
     phone_no   = PhoneNumberField(unique=True)
     owner = models.OneToOneField(

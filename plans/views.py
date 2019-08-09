@@ -3,8 +3,8 @@ from django.http import Http404
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import user_passes_test
 from rest_framework.views import APIView
-from rest_framework.authentication import TokenAuthentication
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import permissions
+from oauth2_provider.contrib.rest_framework import TokenHasReadWriteScope, TokenHasScope
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import exceptions
@@ -12,9 +12,13 @@ from api.utility.customexceptions import ServiceUnavailable, BadRequest, Validat
 from .serializer import PlanSerializer, PlanFeatureSerializer
 from .models import Plan, PlanFeature
 
+"""We could have applied permission at class level but we do not want to restrict GET.
+So we used method decorator to restrict each function."""
 class PlanView(APIView):
+    #permission_classes = [permissions.IsAuthenticated]
+
     """This class defines the create behavior of our rest api."""
-    def auth_check(self):
+    def auth_admin_check(self):
         is_authorised = False
         if not self.is_anonymous:
             if self.is_admin:
@@ -42,7 +46,7 @@ class PlanView(APIView):
     #TODO: Need to check the incoming request data structure, avoid any key errors
     #TODO: Need to validate the data through middleware
 
-    @method_decorator(user_passes_test(auth_check), name="dispatch")
+    @method_decorator(user_passes_test(auth_admin_check), name="dispatch")
     def post(self, request): 
         """Handle update requests plan/<id>.Returns 201 Resource created with created objects as a list."""
         #Create a plan from the above data, 
@@ -65,7 +69,7 @@ class PlanView(APIView):
                         }, 
                         status=201)
 
-    @method_decorator(user_passes_test(auth_check), name="dispatch")
+    @method_decorator(user_passes_test(auth_admin_check), name="dispatch")
     def put(self,request,pk):
         """Handle update requests plan/<id>.
         Returns 200 with updated object.
@@ -86,7 +90,7 @@ class PlanView(APIView):
             }, 
             status=200)
             
-    @method_decorator(user_passes_test(auth_check), name="dispatch")
+    @method_decorator(user_passes_test(auth_admin_check), name="dispatch")
     def delete(self, request, pk):
         # Get object with this pk
         planObject = self.get_object(pk=pk)

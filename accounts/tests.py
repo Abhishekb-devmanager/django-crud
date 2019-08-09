@@ -96,7 +96,7 @@ class UserViewTestCase(TestCase):
         # if all_users is not None:
         #     all_users.delete()
         self.token = Token.objects.create(user=verified_user)
-        tokenstr = "Token {}".format(self.token)
+        tokenstr = "Bearer {}".format(self.token)
         self.client.credentials(HTTP_AUTHORIZATION=tokenstr)
 
 
