@@ -15,7 +15,9 @@ from .models import Plan, PlanFeature
 """We could have applied permission at class level but we do not want to restrict GET.
 So we used method decorator to restrict each function."""
 class PlanView(APIView):
-    #permission_classes = [permissions.IsAuthenticated]
+    # this will not allow non authenticated users to post data.
+    # this allows non authenticated users to get data.
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     """This class defines the create behavior of our rest api."""
     def auth_admin_check(self):

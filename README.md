@@ -54,4 +54,5 @@
 - In AUTH - not OAUTH - If a valid auth token is passed in a request without user credentials - if expired a new token will be returned. 
 - We also learnt how to convert a request.user object jsonserializable using serializer context.
 - utility is_user_authenticated
+- Basic implementation allowed to control access using scope entitled token
 - Admin.py - UserAdmin class form settings are mandatory to be overridded, to provide an input to the base implementation. so missing the fieldsets implementation or search will lead to a django exception. the base implementation looks for username it is you need to tell in admin.py.

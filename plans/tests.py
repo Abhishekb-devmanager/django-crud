@@ -101,7 +101,7 @@ class PlanViewTestCase(TestCase):
             format="json"
         )
         token = json.loads(response.content).get('auth').get('token')
-        tokenstr = "Token {}".format(token)
+        tokenstr = "Bearer {}".format(token)
         print(tokenstr)
         self.client.credentials(HTTP_AUTHORIZATION=tokenstr)
 
